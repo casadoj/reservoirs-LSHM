@@ -8,7 +8,7 @@ paths:
     ResOps: 
         root: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsPT/
         obs_timeseries: raw/time_series/
-        sim_timeseries: ancillary/LISFLOOD/
+        sim_timeseries: ancillary/ncextract/inflow/
         
 normalize: True # normalize time series by reservoir storage capacity
 

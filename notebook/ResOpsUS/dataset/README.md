@@ -78,3 +78,8 @@ The notebook [2_time_series.ipynb](2_time_series.ipynb) reads all the available 
 
 The notebook [3_select_reservoirs_periods.ipynb](3_select_reservoirs_periods.ipynb) reads the static attributes and time series produced in the previous notebooks and creates a TXT with the selection of reservoirs and a Pickle file with the time period where data is available for calibration. This selection of reservoirs and calibration period is based on the conditions defined in the [configuration file](#Configuration-file).
 
+## Reference
+
+Casado Rodríguez, J., Disperati, J., & Salamon, P. (2025). ResOpsUS+CARS: Reservoir Operations US and CAtchment and Reservoir Static attributes (1.0) [Data set]. European Commission - Joint Research Centre. https://doi.org/10.5281/zenodo.15978041
+
+

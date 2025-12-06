@@ -124,7 +124,7 @@ def read_timeseries(
     """
 
     if reservoirs is None:
-        reservoirs = [int(file.stem) for file in path_ts.glob('*.csv')]
+        reservoirs = [int(file.stem) for file in path.glob('*.csv')]
 
     # if variables is None:
     #     variables = ['inflow', 'storage', 'outflow', 'elevation']

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from timezonefinder import TimezoneFinder
+from pytz.exceptions import AmbiguousTimeError, NonExistentTimeError
 from typing import Literal, Optional
 
 
@@ -31,14 +32,18 @@ def convert_to_utc(
     # find timezone
     tf = TimezoneFinder()
     local_timezone = tf.timezone_at(lng=lon, lat=lat)
-    convert_to_utc.local_tz = local_timezone
+    
 
     # define timezone
     ts_local = series.copy()
     if ts_local.index.tz is None:
         try:
             ts_local.index = ts_local.index.tz_localize(local_timezone)
-        except:
+        except NonExistentTimeError as e:
+            # Handle DST gaps (e.g., clocks "spring forward")
+            ts_local.index = ts_local.index.tz_localize(local_timezone, nonexistent='shift_forward')
+        except AmbiguousTimeError as e:
+            # Handle ambiguous times (e.g., clocks "fall back")
             ts_local.index = ts_local.index.tz_localize(local_timezone, ambiguous=False)
     else:
         ts_local.index = ts_local.index.tz_convert(local_timezone)
@@ -46,6 +51,9 @@ def convert_to_utc(
     # convert to UTC with offset
     ts_utc = ts_local.copy()
     ts_utc.index = ts_utc.index.tz_convert('UTC')
+    
+    # store timezone and offset for optional use
+    convert_to_utc.local_tz = local_timezone
     convert_to_utc.offset = ts_utc.index.hour.min()
 
     return ts_utc

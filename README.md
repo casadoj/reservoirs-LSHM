@@ -143,3 +143,9 @@ options:
   -w, --overwrite
                           Overwrite existing simulation files. Default: False
 ```
+
+## Datasets
+
+Casado Rodríguez, J., Disperati, J., & Salamon, P. (2025). ResOpsUS+CARS: Reservoir Operations US and CAtchment and Reservoir Static attributes (1.0) [Data set]. European Commission - Joint Research Centre. https://doi.org/10.5281/zenodo.15978041
+
+Casado Rodríguez, J., Disperati, J., & Salamon, P. (2025). ResOpsBR+CARS: Reservoir Operations Brazil and CAtchment and Reservoir Static attributes (1.0) [Data set]. European Commission - Joint Research Centre. https://doi.org/10.5281/zenodo.16096623

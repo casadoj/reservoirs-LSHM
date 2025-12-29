@@ -4,7 +4,7 @@
 ![Python_3.11](https://img.shields.io/badge/Python-%3E%3D3.11-blue?labelColor=343b41) &nbsp; [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) &nbsp; [![Docs](https://img.shields.io/badge/docs-online-blue.svg)](https://github.com/casadoj/lisflood-reservoirs/wiki)
 
 
-# LISFLOOD reservoirs
+# Reservoirs in Large Scale Hydrological Models
 
 This repository contains tools to run and calibrate different reservoir routines meant to be used in large-scale hydrological models like [LISFLOOD Open Source](https://github.com/ec-jrc/lisflood-code).
 

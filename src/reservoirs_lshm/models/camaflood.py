@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import expit
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -67,7 +68,8 @@ class Camaflood(Reservoir):
     def weighing(
         self,
         I: Union[float, np.ndarray],
-        factor: float = 0.2
+        Qmin: float,
+        eps: float = 5e-3
     ) -> Union[float, np.ndarray]:
         """
         Computes a sigmoid-based weight to smoothly transition between 
@@ -81,9 +83,9 @@ class Camaflood(Reservoir):
         ----------
         I : float or array-like
             Inflow to the reservoir at the current timestep.
-        factor : float, optional (default=0.2)
-            Controls the width of the sigmoid transition as a fraction of Qf. 
-            A smaller factor makes the transition sharper; a larger factor 
+        eps : float, optional (default=0.005)
+            Accepted error (epsilon). Controls the width of the sigmoid transition. 
+            A smaller epsilon makes the transition sharper; a larger factor 
             makes it smoother.
     
         Returns
@@ -93,19 +95,17 @@ class Camaflood(Reservoir):
             between normal and flood release equations.
         """
         
-        eps = 5e-3
+        # half width of the sigmoid function based on the error
+        half_width = np.log((1 - eps) / eps)
+        
+        # linear transformation: mean and scale
+        mu = np.mean([Qmin, self.Qf]).item()
+        scale = half_width / (self.Qf - mu)
+        x = (I - mu) * scale
 
-        if factor <= 1e-2:
-            weight = np.where(I < self.Qf, 0, 1)
-        else:
-            # estimate the value of alpha based on the width
-            half_width = factor * self.Qf
-            alpha = np.log((1 - eps) / eps) / half_width
-        
-            # compute weight
-            Q = self.Qf - half_width
-            weight = 1 / (1 + np.exp(-alpha * (I - Q)))
-        
+        # compute weight: sigmoid
+        weight = expit(x)
+
         return weight
         
     def step(
@@ -115,7 +115,6 @@ class Camaflood(Reservoir):
         P: Optional[float] = None,
         E: Optional[float] = None,
         D: Optional[float] = None,
-        verbose: bool = False
     ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
@@ -131,8 +130,6 @@ class Camaflood(Reservoir):
             Open water evaporation (mm)
         D: float (optional)
             Consumptive demand (m3)
-        verbose: bool
-            Whether to show on screen the evolution
             
         Returns:
         --------
@@ -164,7 +161,7 @@ class Camaflood(Reservoir):
         # ouflow depending on the inflow and storage level
         if V < self.Vmin:
             Q = V / self.Vf * self.Qn
-        else:
+        elif V <= self.Ve:
             # Qlow: when inflow is lower than Qf
             # Qhigh: when inflow is greater or equal than Qf
             if V < self.Vf:
@@ -173,15 +170,13 @@ class Camaflood(Reservoir):
             elif V < self.Ve:
                 Qlow = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
                 Qhigh = self.Qf + self.k * (V - self.Vf) / (self.Ve - self.Vf) * (I - self.Qf)
-            elif self.Ve <= V:
-                Qlow = self.Qf
-                Qhigh = I
-                if verbose:
-                    if V > self.Vtot:
-                        print(f'{V} m3 is greater than the reservoir capacity of {self.Vtot} m3')
             # compute release as a weighed sum of the "normal" and "flood" mode
-            w = self.weighing(I, factor=0)#0.2)
+            w = self.weighing(I, Qlow)
             Q = (1 - w) * Qlow + w * Qhigh
+        elif V >= self.Ve:
+            Q = self.Qf if I < self.Qf else I
+            
+            
 
         # limit outflow so the final storage is between 0 and 1
         eps = 1e-3

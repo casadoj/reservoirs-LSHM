@@ -162,3 +162,5 @@ cython_debug/
 notebook/HDMS_API.yml
 
 ./notebook/DAHITI/api_key.txt
+
+**/*~BROMIUM/

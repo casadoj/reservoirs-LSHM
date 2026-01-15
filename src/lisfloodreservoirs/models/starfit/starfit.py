@@ -149,8 +149,8 @@ class Starfit(Reservoir):
         # harmonic component of the release
         harm = self.Qharm[doy]
         # residual component of the release
-        A_t = np.clip(V_st - Vc / (Vf - Vc), 0, 1) # storage availability
-        eps = self.parsQresid['Intercept'] + A_t * self.parsQresid['a_st'] + I_st * self.parsQresid['i_st']      
+        A_st = np.clip(V_st - Vc / (Vf - Vc), 0, 1) # storage availability
+        eps = self.parsQresid['Intercept'] + A_st * self.parsQresid['a_st'] + I_st * self.parsQresid['i_st']      
         # normal release
         Qnor = self.avg_inflow * (harm + eps + 1)
         

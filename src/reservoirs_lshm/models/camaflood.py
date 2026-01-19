@@ -394,3 +394,58 @@ class Camaflood(Reservoir):
             alpha=kwargs.get('alpha', .05),
             save=save
         )
+
+
+def plot_camaflood(reservoir, timeseries, ax=None, **kwargs):
+
+    lw = kwargs.get('lw', 1.2)
+    figsize = kwargs.get('figsize', (4, 4))
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    
+    V = np.array([0, reservoir.Vmin])
+    Q = V / reservoir.Vf * reservoir.Qn
+    ax.plot(V * 1e-6, Q, lw=lw, c='steelblue')
+    
+    V = np.linspace(reservoir.Vmin, reservoir.Ve, 100)
+    Q = reservoir.Vmin / reservoir.Vf * reservoir.Qn + ((V - reservoir.Vmin) / (reservoir.Ve - reservoir.Vmin))**2 * (reservoir.Qf - reservoir.Vmin / reservoir.Vf * reservoir.Qn)
+    ax.plot(V * 1e-6, Q, lw=lw, c='steelblue', label=r'$I < Q_f$')
+    
+    V = np.linspace(reservoir.Vmin, reservoir.Vf, 100)
+    Q = reservoir.Vmin / reservoir.Vf * reservoir.Qn + (V - reservoir.Vmin) / (reservoir.Vf - reservoir.Vmin) * (reservoir.Qf - reservoir.Vmin / reservoir.Vf * reservoir.Qn)
+    ax.plot(V * 1e-6, Q, lw=lw, c='indianred', label=r'$I ≥ Q_f$')
+    
+    V = np.linspace(reservoir.Vf, reservoir.Ve, 100)
+    k = max(1 - (reservoir.Vtot - reservoir.Vf) / (reservoir.catchment * .2), 0)
+    I = 1.5 * reservoir.Qf
+    Q = reservoir.Qf + k * (V - reservoir.Vf) / (reservoir.Ve - reservoir.Vf) * (I - reservoir.Qf)
+    ax.plot(V * 1e-6, Q, lw=lw, c='indianred')
+    
+    ax.scatter(timeseries.storage * 1e-6, timeseries.outflow, marker='.', s=.5, color='lightgrey', alpha=.5, zorder=0)
+    #mask = timeseries.inflow > reservoir.Qf
+    #ax.scatter(ts[~mask].storage * 1e-6, ts[~mask].outflow, marker='.', s=.5, color='lightgrey', alpha=.5, zorder=0)
+    #ax.scatter(ts[mask].storage * 1e-6, ts[mask].outflow, marker='.', s=.5, color='indianred', alpha=.5, zorder=0)
+    
+    # reference storages and outflows
+    vs = [reservoir.Vmin, reservoir.Vf, reservoir.Ve]
+    qs = [reservoir.Vmin / reservoir.Vf * reservoir.Qn, reservoir.Qf, reservoir.Qf]
+    for v, q in zip(vs, qs):
+        ax.vlines(v * 1e-6, 0, q, color='k', ls=':', lw=.5, zorder=0)
+        ax.hlines(q, 0, v * 1e-6, color='k', ls=':', lw=.5, zorder=0)
+    
+    # labels
+    ax.text(0, qs[0], r'$Q_c$', ha='left', va='bottom')
+    ax.text(0, qs[1], r'$Q_f$', ha='left', va='bottom')
+    ax.text(reservoir.Vmin * 1e-6, 0, r'$V_c$', rotation=90, ha='left', va='bottom')
+    ax.text(reservoir.Vf * 1e-6, 0, r'$V_f$', rotation=90, ha='right', va='bottom')
+    ax.text(reservoir.Ve * 1e-6, 0, r'$V_e$', rotation=90, ha='right', va='bottom')
+    
+    ax.set(
+        xlim=(0, reservoir.Vtot * 1e-6),
+        xlabel=kwargs.get('xlabel', 'storage (hm3)'),
+        ylim=(0, None),
+        ylabel=kwargs.get('ylabel', 'outflow (m3/s)'),
+        title=kwargs.get('title', None)
+    )
+    ax.legend(frameon=False)

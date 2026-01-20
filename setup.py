@@ -27,6 +27,7 @@ setup(
         'numpy',
         'pandas',
         'pyyaml',
+        'rioxarray',
         # 'scikit-learn',
         'seaborn',
         'spotpy',

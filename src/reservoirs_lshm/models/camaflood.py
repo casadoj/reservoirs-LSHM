@@ -443,9 +443,9 @@ def plot_camaflood(reservoir, timeseries, ax=None, **kwargs):
     
     ax.set(
         xlim=(0, reservoir.Vtot * 1e-6),
-        xlabel=kwargs.get('xlabel', 'storage (hm3)'),
+        xlabel=kwargs.get('xlabel', r'Storage [$hm^3$]'),
         ylim=(0, None),
-        ylabel=kwargs.get('ylabel', 'outflow (m3/s)'),
+        ylabel=kwargs.get('ylabel', r'Outflow [$m3/s$]'),
         title=kwargs.get('title', None)
     )
     ax.legend(frameon=False)

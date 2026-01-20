@@ -18,6 +18,7 @@ def plot_release(
     linear: xr.DataArray,
     Qmin: Optional[float] = None,
     Qmax: Optional[float] = None,
+    axes: Optional[List] = None,
     save: Optional[Union[str, Path]] = None,
     **kwargs
 ):
@@ -72,23 +73,26 @@ def plot_release(
     lw = kwargs.get('linewidth', 2)
     cmap = kwargs.get('cmap', 'Blues')
     
-    fig = plt.figure(figsize=(12, 4.5))
-    gs = GridSpec(1, 2, width_ratios=[7.5, 4.5])
+    if axes is None or len(axes) != 2:
+        fig = plt.figure(figsize=figsize)
+        gs = GridSpec(1, 2, width_ratios=[7.5, 4.5])
+        ax1 = fig.add_subplot(gs[0])
+        ax2 = fig.add_subplot(gs[1])
+    else:
+        ax1, ax2 = axes
     
     # harmonic release
-    ax1 = fig.add_subplot(gs[0])
     st_release = (obs_release / avg_inflow) - 1
     ax1.scatter(st_release.index, st_release, c='k', s=s, alpha=alpha, label='observed')
     harmonic.plot(ax=ax1, c='steelblue', lw=lw, label='harmonic')
     if Qmin is not None or Qmax is not None:
         ax1.hlines([Qmin, Qmax], 1, 52, color='steelblue', ls=':', lw=lw/2, label='min-max')
-    ax1.legend(loc=2, frameon=False)
-    ax1.set(xlim=(1, 52),
-           xlabel='epiweek',
-           ylabel='standardised release (-)')
+    ax1.legend(loc='upper right', bbox_to_anchor=(1, 1), frameon=True, facecolor='white', edgecolor='none')
+    ax1.set(xlim=(.6, 52.4),
+           xlabel='Week',
+           ylabel=r'Std. outflow, $\hat{Q}_t$ [-]')
     
     # linear release
-    ax2 = fig.add_subplot(gs[1], sharey=ax1)
     norm = colors.Normalize(vmin=-.25, vmax=1)
     sm = cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
@@ -96,7 +100,7 @@ def plot_release(
         serie = linear.sel(a_st=a_st).to_pandas()
         color = sm.to_rgba(a_st)
         ax2.plot(serie, color=color, label=r'$A_{{st}}={0:.0f}\%$'.format(a_st * 100))
-    ax2.set(xlabel='standardised inflow (-)')
+    ax2.set(xlabel=r'Std. inflow, $\hat{I}_t$ [-]')
     ax2.legend(loc=2, frameon=False)
     ax2.tick_params(labelleft=None)
     
@@ -112,7 +116,8 @@ def plot_nor(
     weekly_storage: pd.DataFrame,
     NOR: pd.DataFrame, 
     n_points: int = 3,
-    save: Optional[Union[str, Path]] = None, 
+    save: Optional[Union[str, Path]] = None,
+    ax: Optional = None,
     **kwargs
 ):
     """
@@ -163,7 +168,8 @@ def plot_nor(
     s = kwargs.get('size', 8)
     alpha = kwargs.get('alpha', 0.3)
     
-    fig, ax = plt.subplots(figsize=figsize)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
     
     # observations
     ax.scatter(weekly_storage.epiweek, weekly_storage.s_st, c='k', s=8, alpha=alpha, label='observed')
@@ -181,11 +187,11 @@ def plot_nor(
         ax.set_title(title)
     ax.text(0.01, 0.975, 'flood pool', va='top', transform=ax.transAxes)
     ax.text(0.01, 0.025, 'conservation pool', va='bottom', transform=ax.transAxes)
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
-    ax.set(xlim=(1, 52),
-           xlabel='epiweek',
+    ax.legend(loc='lower right', bbox_to_anchor=(1, 0), frameon=False)
+    ax.set(xlim=(.6, 52.4),
+           xlabel='Week',
            ylim=(0, 1),
-           ylabel='reservoir filling (-)');
+           ylabel=r'Filling, $\hat{V}_t$ [-]');
     
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight')

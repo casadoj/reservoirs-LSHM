@@ -328,7 +328,7 @@ def plot_lisflood(reservoir, timeseries, ax=None, **kwargs):
     
     # setup
     ax.set(xlim=(0, reservoir.Vtot * 1e-6),
-           xlabel='storage (hm3)',
+           xlabel=r'Storage [$hm^3$]',
            ylim=(0, None),
-           ylabel='outflow (m3/s)')
+           ylabel=r'Outflow [$m^3/s$]')
     ax.set_title('LISFLOOD')

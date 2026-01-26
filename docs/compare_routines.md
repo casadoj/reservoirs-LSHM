@@ -21,7 +21,7 @@ I have used two data sources:
 
 #### 2.1.1 Time series
 
-A quick look at the time series in ResOpsUS shows that the records are not consistent in many cases. There are negative values (not possible in any of the variables involved), zero values, outliers, sudden drops in reservoir storage. I have developed simple functions to clean the storage timeseries ([`clean_storage`](../src/lisfloodreservoirs/utils/timeseries.py)), and clean and fill in gaps in the inflow time series ([`clean_inflow`](../src/lisfloodreservoirs/utils/timeseries.py)). I have filled in gaps only in the inflow time series because this is the input of the reservoir models, so missing values break the simulation. On the contrary, gaps in the storage or outflow time series have no effects, since these time series are only used for assessing the performance of the model. I used a linear filling up to 7 days (longer gaps are kept).
+A quick look at the time series in ResOpsUS shows that the records are not consistent in many cases. There are negative values (not possible in any of the variables involved), zero values, outliers, sudden drops in reservoir storage. I have developed simple functions to clean the storage timeseries ([`clean_storage`](../src/reservoirs_lshm/utils/timeseries.py)), and clean and fill in gaps in the inflow time series ([`clean_inflow`](../src/reservoirs_lshm/utils/timeseries.py)). I have filled in gaps only in the inflow time series because this is the input of the reservoir models, so missing values break the simulation. On the contrary, gaps in the storage or outflow time series have no effects, since these time series are only used for assessing the performance of the model. I used a linear filling up to 7 days (longer gaps are kept).
 
 #### 2.1.2 Selection of reservoirs and study period
 
@@ -44,7 +44,7 @@ In the end, I have selected 90 reservoirs.
 
 I have tested four reservoir models. In the following subsections I explain each of these models from the simpler to the more complex.
 
-#### 3.1.1 [Linear reservoir](../src/lisfloodreservoirs/models/linear.py)
+#### 3.1.1 [Linear reservoir](../src/reservoirs_lshm/models/linear.py)
 
 The linear reservoir models the outflow ($Q_t$) as a linear function of the current storage ($V_t$). 
 
@@ -54,7 +54,7 @@ The only parameter is the residence time ($T$). It represents the time that a dr
 
 $$T = \frac{V_{tot}}{\bar{I}} [\text{days}]$$
 
-Table 1 shows the search range for this parameter defined in the calibration of the linear reservoir. This calibration is implemented in the class [`Linear_calibrator`](../src/lisfloodreservoirs/calibration/linear.py)
+Table 1 shows the search range for this parameter defined in the calibration of the linear reservoir. This calibration is implemented in the class [`Linear_calibrator`](../src/reservoirs_lshm/calibration/linear.py)
     
 ***Table 1**. Calibration parameters in the linear reservoir.*
 
@@ -70,7 +70,7 @@ As an example, Figure 1 compares the daily values of storage, outflow and inflow
 
 ***Figure 1**. Comparison of the observed (blue) and default simulation (orange) of reservoir 355 with the linear model.*
 
-#### 3.1.2 [LISFLOOD](../../src/lisfloodreservoirs/models/lisflood.py)
+#### 3.1.2 [LISFLOOD](../../src/reservoirs_lshm/models/lisflood.py)
 
 In simple terms, the current LISFLOOD model is a concatenation of linear reservoirs, where the constant connecting storage and outflow changes according to the storage zone at which the reservoir is at that moment: conservative, normal or flood.
 
@@ -88,7 +88,7 @@ where $V_{min}$, $V_n$, $V_{n,adj}$ and $V_f$ are the minimum storage, lower and
 
 The LISFLOOD-OS calibration tunes two reservoir parameters that define the normal outflow ($Q_n$) and the upper limit of the normal storage ($V_{n,adj}$). The other values defining the three break points in the routine (see Figure 2) are default.
 
-In the calibration I have performed here, I have allowed maximum flexibility to the routine. I have calibrated the six parameters in Table 2, i.e., I only fixed the minimum storage and minimum outflow. This calibration is implemented in the class [`Lisflood_calibrator`](../src/lisfloodreservoirs/calibration/lisflood.py).
+In the calibration I have performed here, I have allowed maximum flexibility to the routine. I have calibrated the six parameters in Table 2, i.e., I only fixed the minimum storage and minimum outflow. This calibration is implemented in the class [`Lisflood_calibrator`](../src/reservoirs_lshm/calibration/lisflood.py).
 
 ***Table 2**. Calibration parameters in the LISFLOOD reservoir.*
 
@@ -109,7 +109,7 @@ Figure 2 shows a comparison of the observation and default simulation of the LIS
 
 ***Figure 2**. Comparison of the observed (blue) and default simulation (orange) of reservoir 355 with the LISFLOOD model.*
 
-#### 3.1.3 [Hanazaki](../../src/lisfloodreservoirs/models/hanazaki.py)
+#### 3.1.3 [Hanazaki](../../src/reservoirs_lshm/models/hanazaki.py)
 
 The model in [Hanazaki et al. (2022)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021MS002944) is an evolution of the LISFLOOD model that creates two different reservoir operations depending on the inflow ($I_t$). If the inflow is smaller than the flood outflow ($Q_f$), outflow is a quadratic function of storage; this quadratic behaviour limits the outflow when the reservoir empties, hence storing water for future needs. If the inflow is larger than the flood outflow, it's a linear reservoir.
 
@@ -125,7 +125,7 @@ I_t & \text{if } I_t \geq Q_f \text{ and } V_t \geq V_e
 \end{cases}
 $$
 
-Similarly to LISFLOOD, this routine needs to specify some storage and outflow limits. In their paper they do not calibrate the model. Instead, they use default parameters to define the storage and outflow limits. On the contrary, I have developed a calibration (class [`Hanazaki_calibrator`](../src/lisfloodreservoirs/calibration/hanazaki.py)) with 5 model parameters. To be able to compare the LISFLOOD and Hanazaki routine, the definition of three of those parameters is identical between these two routines: $\alpha$, $\delta$, $\epsilon$.
+Similarly to LISFLOOD, this routine needs to specify some storage and outflow limits. In their paper they do not calibrate the model. Instead, they use default parameters to define the storage and outflow limits. On the contrary, I have developed a calibration (class [`Hanazaki_calibrator`](../src/reservoirs_lshm/calibration/hanazaki.py)) with 5 model parameters. To be able to compare the LISFLOOD and Hanazaki routine, the definition of three of those parameters is identical between these two routines: $\alpha$, $\delta$, $\epsilon$.
 
 ***Table 3**. Calibration parameters in the Hanazaki reservoir.*
 
@@ -143,11 +143,11 @@ The benefit of the Hanazaki model in comparison with LISFLOOD is that it enhance
 
 ***Figure 3**. Comparison of the observed (blue) and default simulation (orange) of reservoir 355 with the Hanazaki model.*
 
-#### 3.1.4 [mHM](../../src/lisfloodreservoirs/models/mhm.py)
+#### 3.1.4 [mHM](../../src/reservoirs_lshm/models/mhm.py)
 
 This model differs from the others as outflow is not a simple function (linear or quadratic) of storage. Instead, it relies heavily on a demand time series that needs to be estimated somehow. In the [paper](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2023WR035433), they train a random forest specific to each reservoir to predict the demand. The demand time series is used to limit releases (store water) when the current demand is lower compared with the annual mean, and to increase releases (empty the reservoir) with higher demands. The final release is further constrained by the current reservoir filling.
 
-In my implementation, I use the outflow records to estimate an annual demand time series that I repeat over the years. The function [`create_demand`](../src/lisfloodreservoirs/utils/timeseries.py) takes the outflow records and computes the mean ouflow for every day of the year over all the available years, then applies a bias to assume that not all the outflow is meant to fulfil demands, and finally applies a moving mean of window 28 days to smooth the time series. This is just a first approximation aiming at inducing some seasonality in the reservoir modelling.
+In my implementation, I use the outflow records to estimate an annual demand time series that I repeat over the years. The function [`create_demand`](../src/reservoirs_lshm/utils/timeseries.py) takes the outflow records and computes the mean ouflow for every day of the year over all the available years, then applies a bias to assume that not all the outflow is meant to fulfil demands, and finally applies a moving mean of window 28 days to smooth the time series. This is just a first approximation aiming at inducing some seasonality in the reservoir modelling.
 
 **Reservoir release**
 
@@ -211,12 +211,12 @@ $$Q_{\text{min}} = max \left( 0, min \left( I_t \right) \right)$$
 
 #### 3.2.1 Default parameters
 
-As a benchmark, I have run a simulation with the default parameter values in the tables above. This simulation can be run using the [`simulate`](../src/lisfloodreservoirs/simulate.py) command. Example use:
+As a benchmark, I have run a simulation with the default parameter values in the tables above. This simulation can be run using the [`simulate`](../src/reservoirs_lshm/simulate.py) command. Example use:
 
 ```Bash
 # from the root folder of the lisflood-reservoirs repository
 pip install -e .
-simulate --config-file ./src/lisfloodreservoirs/config.yml
+simulate --config-file ./src/reservoirs_lshm/config.yml
 ```
 
 #### 3.2.2 Calibration
@@ -238,12 +238,12 @@ $$
     
 Calibrations were done using the implementation of the SCEUA (Shuffle Complex Evolution - University of Arizona) algorithm in the Python library [`spotpy`](https://spotpy.readthedocs.io/en/latest/). In all cases I used the complete observed time series, and I set up the algorithm to run a maximum of 1000 iterations with 4 complexes. As explained above, the calibration parameters differ over reservoir models, both in number and meaning. 
 
-Calibrations can be excecuted from the command prompt using the command [`calibrate`](../src/lisfloodreservoirs/calibrate.py). Example use:
+Calibrations can be excecuted from the command prompt using the command [`calibrate`](../src/reservoirs_lshm/calibrate.py). Example use:
 
 ```Bash
 # from the root folder of the lisflood-reservoirs repository
 pip install -e .
-calibrate --config-file ./src/lisfloodreservoirs/config.yml
+calibrate --config-file ./src/reservoirs_lshm/config.yml
 ```
 
 ## 4 Results

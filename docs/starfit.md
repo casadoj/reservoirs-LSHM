@@ -3,7 +3,7 @@
 
 ## Introduction
 
-I have implemented in Python the reservoir model introduced in [Turner et al. (2021)](https://www.sciencedirect.com/science/article/pii/S0022169421008933). The paper refers to an R repository called [Starfit](https://github.com/IMMM-SFA/starfit) that includes the functions to fit the storage and release functions of this reservoir routine. I have translated these functions into Python and created a class [`Starfit`](https://github.com/casadoj/lisflood-reservoirs/blob/ResOpsUS/src/lisfloodreservoirs/models/starfit/starfit.py) that takes the fitted parameters and simulates the reservoir.
+I have implemented in Python the reservoir model introduced in [Turner et al. (2021)](https://www.sciencedirect.com/science/article/pii/S0022169421008933). The paper refers to an R repository called [Starfit](https://github.com/IMMM-SFA/starfit) that includes the functions to fit the storage and release functions of this reservoir routine. I have translated these functions into Python and created a class [`Starfit`](https://github.com/casadoj/lisflood-reservoirs/blob/ResOpsUS/src/reservoirs_lshm/models/starfit/starfit.py) that takes the fitted parameters and simulates the reservoir.
 
 The full implementation of the Starfit reservoir routine requires the following variables:
 

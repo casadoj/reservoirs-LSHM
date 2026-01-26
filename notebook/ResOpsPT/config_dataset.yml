@@ -8,13 +8,13 @@ paths:
     ResOps: 
         root: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsPT/
         obs_timeseries: raw/time_series/
-        sim_timeseries: ancillary/LISFLOOD/
+        sim_timeseries: ancillary/ncextract/inflow/
         
 normalize: True # normalize time series by reservoir storage capacity
 
 period:
     start: 1990-01-01
-    end: #2020-09-30
+    end: 2022-12-31
 
 conditions:
     min_area: 25 # km²

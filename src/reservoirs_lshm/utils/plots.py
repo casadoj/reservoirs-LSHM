@@ -47,8 +47,18 @@ def plot_reservoir_map(
     size = kwargs.get('size', 12)
     
     # set up plot
-    fig, ax = plt.subplots(figsize=figsize, subplot_kw=dict(projection=ccrs.PlateCarree()))
-    ax.add_feature(cf.NaturalEarthFeature('physical', 'land', '50m', edgecolor='face', facecolor='lightgray'), alpha=.5, zorder=0)
+    proj = ccrs.PlateCarree()
+    fig, ax = plt.subplots(
+        figsize=figsize, 
+        subplot_kw={'projection': proj}
+    )
+    ax.add_feature(
+        cf.NaturalEarthFeature('physical', 'land', '50m', edgecolor='face', facecolor='lightgray'),
+        alpha=.5,
+        zorder=0
+    )
+    if 'extent' in kwargs:
+        ax.set_extent(kwargs['extent'], crs=proj)
     ax.axis('off')
     
     # plot reservoir poitns
@@ -63,24 +73,9 @@ def plot_reservoir_map(
         cmap=cmap,
         alpha=alpha
     )
-    # if area is not None:
-    #     scatter = ax.scatter(
-    #         geometry.x,
-    #         geometry.y,
-    #         s=np.sqrt(volume), #volume / 1000
-    #         c=np.sqrt(area), #, c=np.log10(icold.DOR_PC.replace(0, .1))
-    #         cmap='coolwarm',
-    #         alpha=alpha
-    #     )
-    # else:
-    #     scatter = ax.scatter(
-    #         geometry.x,
-    #         geometry.y,
-    #         s=np.sqrt(volume), #volume / 1000
-    #         color='steelblue',
-    #         alpha=alpha
-    #     )
+
     
+        
     # title
     if title is not None:
         ax.text(.5, 1.125, title, horizontalalignment='center', verticalalignment='bottom', transform=ax.transAxes, fontsize=12)
@@ -144,10 +139,12 @@ def plot_attributes(
     if ncols > ncols_max:
         ncols, nrows = ncols_max, int(np.ceil(ncols / ncols_max))
 
-    fig, axes = plt.subplots(ncols=ncols,
-                             nrows=nrows,
-                             figsize=(figsize[0] * ncols, figsize[1] * nrows),
-                             subplot_kw={'projection': proj})
+    fig, axes = plt.subplots(
+        ncols=ncols,
+        nrows=nrows,
+        figsize=(figsize[0] * ncols, figsize[1] * nrows),
+        subplot_kw={'projection': proj}
+    )
     for i, col in enumerate(df.columns):
         if nrows > 1:
             f, c = i // ncols, i % ncols

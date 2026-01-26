@@ -1312,6 +1312,7 @@ def boxplot_comparison(
     w = kwargs.get('width', .15)
     figsize = kwargs.get('figsize', (6, 3))
     alpha = kwargs.get('alpha', .7)
+    ylabel = kwargs.get('ylabel', metric)
     
     colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
     colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
@@ -1348,7 +1349,7 @@ def boxplot_comparison(
         ax.tick_params(axis='x', length=0)
         ax.set(
             ylim=(-1, 1),
-            ylabel=metric,
+            ylabel=ylabel,
             title=title
         )
         ax.spines[['top', 'right', 'bottom']].set_visible(False)
@@ -1412,6 +1413,7 @@ def swarmplot_comparison(
         - `width_ratio` (float, default=0.5): Ratio of the width of the empty space between
           `ax_dim` groups compared to the width of a single subplot.
         - `wspace` (float, default=0.25): Horizontal spacing between subplots.
+        - `xlim` (tuple, default=(-1, 1)): Tuple specifying the x-axis limits.
         - `ylim` (tuple, default=(-1, 1)): Tuple specifying the y-axis limits.
 
     Notes
@@ -1441,6 +1443,8 @@ def swarmplot_comparison(
     w = kwargs.get('width', .5)
     wratio = kwargs.get('width_ratio', .5)
     wspace = kwargs.get('wspace', 0.25)
+    xlim = kwargs.get('xlim', (-2, None))
+    ylabel = kwargs.get('ylabel', metric)
     ylim = kwargs.get('ylim', (-1.05, 1.05))
     
     colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
@@ -1513,24 +1517,25 @@ def swarmplot_comparison(
             # axis setup
             ax.tick_params(axis='x', length=0)
             ax.set(
+                xlim=xlim,
                 xlabel=label,
                 xticks=[],
                 ylim=ylim,                
             )
+            ax.spines[['top', 'right', 'bottom']].set_visible(False)
+            ax.spines['left'].set_bounds(-1, 1)
             if j % 3 == 0:
                 ax.set(
-                    ylabel=metric,
+                    ylabel=ylabel,
                     # yticks=[-1, -.5, 0, .5, 1],
                 )
                 ax.text(-.5, 1.1, f'{chr(97 + i)})', transform=ax.transAxes)
-                ax.spines[['top', 'right', 'bottom']].set_visible(False)
             else:
                 ax.set(
                     ylabel=None,
                     yticks=[],
                 )
-                ax.spines[['top', 'right', 'bottom', 'left']].set_visible(False)
-                ax.spines['left'].set_bounds(-1, 1);
+                ax.spines['left'].set_visible(False)
             if j == 1:
                 ax.set_title(title)
         

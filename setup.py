@@ -1,18 +1,18 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='lisflood-reservoirs',
-    version='1.2.0',
+    name='reservoirs-lshm',
+    version='1.2.2',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
-            'run_reservoir=lisfloodreservoirs.simulate:main',
-            'cal_reservoir=lisfloodreservoirs.calibrate:main',
-            'fit_starfit=lisfloodreservoirs.fit_starfit:main',
-            'run_starfit=lisfloodreservoirs.run_starfit:main',
-            'catchstats=lisfloodreservoirs.catchstats:main',
-            'ncextract=lisfloodreservoirs.ncextract:main'
+            'run_reservoir=reservoirs_lshm.simulate:main',
+            'cal_reservoir=reservoirs_lshm.calibrate:main',
+            'fit_starfit=reservoirs_lshm.fit_starfit:main',
+            'run_starfit=reservoirs_lshm.run_starfit:main',
+            'catchstats=reservoirs_lshm.catchstats:main',
+            'ncextract=reservoirs_lshm.ncextract:main'
         ],
     },
     install_requires=[
@@ -27,6 +27,7 @@ setup(
         'numpy',
         'pandas',
         'pyyaml',
+        'rioxarray',
         # 'scikit-learn',
         'seaborn',
         'spotpy',
@@ -36,7 +37,7 @@ setup(
         'xarray',
     ],
     author='Jesús Casado Rodríguez',
-    author_email='jesus.casado-rodriguez@ec.europa.eu',
+    author_email='chus.casado.88@gmail.com',
     description='Package to simulate reservoir operations according to different modelling routines.',
     keywords='hydrology reservoir simulation calibration',
 )

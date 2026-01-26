@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import expit
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -57,12 +58,55 @@ class Camaflood(Reservoir):
         
         # outflow limits
         self.Qn = Qn
+
+        # catchment area
+        self.catchment = catchment
         
         # release coefficient
-        self.k = max(1 - (Vtot - Vf) / (catchment * .2), 0)
-        # self.k = max(1 - (Vtot - Vf) / (catchment * .2), .1)
-        # self.k = max(1 - (Vtot - Vf) / (catchment * .2), .5)
-        # self.k = 1
+        # self.k = max(1 - (Vtot - Vf) / (catchment * .2), 0)
+
+    def weighing(
+        self,
+        I: Union[float, np.ndarray],
+        Qmin: float,
+        eps: float = 5e-3
+    ) -> Union[float, np.ndarray]:
+        """
+        Computes a sigmoid-based weight to smoothly transition between 
+        'normal' and 'flood' reservoir release regimes based on inflow.
+    
+        This function returns a value between ~0 and ~1 that increases 
+        smoothly as inflow (I) approaches and exceeds the flood threshold (Qf). 
+        The transition replaces sharp mode switching with a smooth blending.
+    
+        Parameters
+        ----------
+        I : float or array-like
+            Inflow to the reservoir at the current timestep.
+        eps : float, optional (default=0.005)
+            Accepted error (epsilon). Controls the width of the sigmoid transition. 
+            A smaller epsilon makes the transition sharper; a larger factor 
+            makes it smoother.
+    
+        Returns
+        -------
+        weight : float or ndarray
+            A smooth weight in the [0, 1] range that can be used to blend 
+            between normal and flood release equations.
+        """
+        
+        # half width of the sigmoid function based on the error
+        half_width = np.log((1 - eps) / eps)
+        
+        # linear transformation: mean and scale
+        mu = np.mean([Qmin, self.Qf]).item()
+        scale = half_width / (self.Qf - mu)
+        x = (I - mu) * scale
+
+        # compute weight: sigmoid
+        weight = expit(x)
+
+        return weight
         
     def step(
         self,
@@ -71,7 +115,6 @@ class Camaflood(Reservoir):
         P: Optional[float] = None,
         E: Optional[float] = None,
         D: Optional[float] = None,
-        verbose: bool = False
     ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
@@ -87,14 +130,15 @@ class Camaflood(Reservoir):
             Open water evaporation (mm)
         D: float (optional)
             Consumptive demand (m3)
-        verbose: bool
-            Whether to show on screen the evolution
             
         Returns:
         --------
         Q, V: List[float]
             Outflow (m3/s) and updated storage (m3)
         """
+
+        # release coefficient
+        self.k = max(1 - (self.Vtot - V) / (self.catchment * .2), 0)
         
         # estimate reservoir area at the beginning of the time step
         if P or E:
@@ -117,24 +161,22 @@ class Camaflood(Reservoir):
         # ouflow depending on the inflow and storage level
         if V < self.Vmin:
             Q = V / self.Vf * self.Qn
-        elif V < self.Vf:
-            if I < self.Qf:
-                Q = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
-            elif I >= self.Qf:
-                Q = self.Vmin / self.Vf * self.Qn + (V - self.Vmin) / (self.Vf - self.Vmin) * (self.Qf - self.Vmin / self.Vf * self.Qn)
-        elif V < self.Ve:
-            if I < self.Qf:
-                Q = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
-            elif I >= self.Qf:
-                Q = self.Qf + self.k * (V - self.Vf) / (self.Ve - self.Vf) * (I - self.Qf)
-        elif self.Ve <= V:
-            if I < self.Qf:
-                Q = self.Qf
-            elif I >= self.Qf:
-                Q = I
-            if verbose:
-                if V > self.Vtot:
-                    print(f'{V} m3 is greater than the reservoir capacity of {self.Vtot} m3')
+        elif V <= self.Ve:
+            # Qlow: when inflow is lower than Qf
+            # Qhigh: when inflow is greater or equal than Qf
+            if V < self.Vf:
+                Qlow = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
+                Qhigh = self.Vmin / self.Vf * self.Qn + (V - self.Vmin) / (self.Vf - self.Vmin) * (self.Qf - self.Vmin / self.Vf * self.Qn)
+            elif V < self.Ve:
+                Qlow = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
+                Qhigh = self.Qf + self.k * (V - self.Vf) / (self.Ve - self.Vf) * (I - self.Qf)
+            # compute release as a weighed sum of the "normal" and "flood" mode
+            w = self.weighing(I, Qlow)
+            Q = (1 - w) * Qlow + w * Qhigh
+        elif V >= self.Ve:
+            Q = self.Qf if I < self.Qf else I
+            
+            
 
         # limit outflow so the final storage is between 0 and 1
         eps = 1e-3
@@ -183,6 +225,9 @@ class Camaflood(Reservoir):
             assert I >= 0, '"I" must be a positive value'
             I = pd.Series(I, index=V.index)
 
+        # # release coefficient
+        # self.k = max(1 - (self.Vtot - V) / (self.catchment * .2), 0)
+        
         maskI = I < self.Qf
         maskV1 = V < self.Vmin
         maskV2 = (self.Vmin <= V) & (V < self.Vf)
@@ -291,7 +336,7 @@ class Camaflood(Reservoir):
             'Vtot': self.Vtot,
             'Qn': self.Qn,
             'Qf': self.Qf,
-            'k': self.k,
+            # 'k': self.k,
             'Atot': self.Atot
         }
         # params = {key: float(value) for key, value in params.items()}
@@ -349,3 +394,58 @@ class Camaflood(Reservoir):
             alpha=kwargs.get('alpha', .05),
             save=save
         )
+
+
+def plot_camaflood(reservoir, timeseries, ax=None, **kwargs):
+
+    lw = kwargs.get('lw', 1.2)
+    figsize = kwargs.get('figsize', (4, 4))
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    
+    V = np.array([0, reservoir.Vmin])
+    Q = V / reservoir.Vf * reservoir.Qn
+    ax.plot(V * 1e-6, Q, lw=lw, c='steelblue')
+    
+    V = np.linspace(reservoir.Vmin, reservoir.Ve, 100)
+    Q = reservoir.Vmin / reservoir.Vf * reservoir.Qn + ((V - reservoir.Vmin) / (reservoir.Ve - reservoir.Vmin))**2 * (reservoir.Qf - reservoir.Vmin / reservoir.Vf * reservoir.Qn)
+    ax.plot(V * 1e-6, Q, lw=lw, c='steelblue', label=r'$I < Q_f$')
+    
+    V = np.linspace(reservoir.Vmin, reservoir.Vf, 100)
+    Q = reservoir.Vmin / reservoir.Vf * reservoir.Qn + (V - reservoir.Vmin) / (reservoir.Vf - reservoir.Vmin) * (reservoir.Qf - reservoir.Vmin / reservoir.Vf * reservoir.Qn)
+    ax.plot(V * 1e-6, Q, lw=lw, c='indianred', label=r'$I ≥ Q_f$')
+    
+    V = np.linspace(reservoir.Vf, reservoir.Ve, 100)
+    k = max(1 - (reservoir.Vtot - reservoir.Vf) / (reservoir.catchment * .2), 0)
+    I = 1.5 * reservoir.Qf
+    Q = reservoir.Qf + k * (V - reservoir.Vf) / (reservoir.Ve - reservoir.Vf) * (I - reservoir.Qf)
+    ax.plot(V * 1e-6, Q, lw=lw, c='indianred')
+    
+    ax.scatter(timeseries.storage * 1e-6, timeseries.outflow, marker='.', s=.5, color='lightgrey', alpha=.5, zorder=0)
+    #mask = timeseries.inflow > reservoir.Qf
+    #ax.scatter(ts[~mask].storage * 1e-6, ts[~mask].outflow, marker='.', s=.5, color='lightgrey', alpha=.5, zorder=0)
+    #ax.scatter(ts[mask].storage * 1e-6, ts[mask].outflow, marker='.', s=.5, color='indianred', alpha=.5, zorder=0)
+    
+    # reference storages and outflows
+    vs = [reservoir.Vmin, reservoir.Vf, reservoir.Ve]
+    qs = [reservoir.Vmin / reservoir.Vf * reservoir.Qn, reservoir.Qf, reservoir.Qf]
+    for v, q in zip(vs, qs):
+        ax.vlines(v * 1e-6, 0, q, color='k', ls=':', lw=.5, zorder=0)
+        ax.hlines(q, 0, v * 1e-6, color='k', ls=':', lw=.5, zorder=0)
+    
+    # labels
+    ax.text(0, qs[0], r'$Q_c$', ha='left', va='bottom')
+    ax.text(0, qs[1], r'$Q_f$', ha='left', va='bottom')
+    ax.text(reservoir.Vmin * 1e-6, 0, r'$V_c$', rotation=90, ha='left', va='bottom')
+    ax.text(reservoir.Vf * 1e-6, 0, r'$V_f$', rotation=90, ha='right', va='bottom')
+    ax.text(reservoir.Ve * 1e-6, 0, r'$V_e$', rotation=90, ha='right', va='bottom')
+    
+    ax.set(
+        xlim=(0, reservoir.Vtot * 1e-6),
+        xlabel=kwargs.get('xlabel', r'Storage [$hm^3$]'),
+        ylim=(0, None),
+        ylabel=kwargs.get('ylabel', r'Outflow [$m3/s$]'),
+        title=kwargs.get('title', None)
+    )
+    ax.legend(frameon=False)

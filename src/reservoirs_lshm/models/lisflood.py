@@ -275,3 +275,60 @@ class Lisflood(Reservoir):
         params = {key: float(value) if value is not None else None for key, value in params.items()}
 
         return params
+    
+
+def plot_lisflood(reservoir, timeseries, ax=None, **kwargs):
+
+    lw = kwargs.get('lw', 1.2)
+    c = kwargs.get('c', 'steelblue')
+    figsize = kwargs.get('figsize', (4, 4))
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    
+    V = np.array([0, 2 * reservoir.Vmin])
+    Q = np.zeros_like(V) + reservoir.Qmin
+    ax.plot(V * 1e-6, Q, lw=lw, c='steelblue')
+    
+    V = np.linspace(2 * reservoir.Vmin, reservoir.Vn, 100)
+    Q = reservoir.Qmin + (reservoir.Qn - reservoir.Qmin) * (V - 2 * reservoir.Vmin) / (reservoir.Vn - 2 * reservoir.Vmin)
+    ax.plot(V * 1e-6, Q, lw=lw, c=c)
+    
+    V = np.linspace(reservoir.Vn, reservoir.Vn_adj, 100)
+    Q = np.zeros_like(V) + reservoir.Qn
+    ax.plot(V * 1e-6, Q, lw=lw, c=c)
+    
+    V = np.linspace(reservoir.Vn_adj, reservoir.Vf, 100)
+    Q = reservoir.Qn + (reservoir.Qf - reservoir.Qn) * (V - reservoir.Vn_adj) / (reservoir.Vf - reservoir.Vn_adj)
+    #if Q > reservoir.k * I:
+    #    Q = np.max([reservoir.k * I, reservoir.Qn])
+    ax.plot(V * 1e-6, Q, lw=lw, c=c)
+    
+    #V = np.linspace(reservoir.Vf, reservoir.Vtot, 100)
+    #I = 1.1 * reservoir.Qf
+    #Q = np.maximum((V - reservoir.Vf) / reservoir.timestep, np.min([reservoir.Qf, np.max([reservoir.k * I, reservoir.Qn])]))
+    #ax.plot(V * 1e-6, Q, lw=lw, c=c)
+    
+    ax.scatter(timeseries.storage * 1e-6, timeseries.outflow, marker='.', s=.5, color='lightgrey', alpha=.5, zorder=0)
+    
+    # reference storages and outflows
+    vs = [2 * reservoir.Vmin, reservoir.Vn, reservoir.Vn_adj, reservoir.Vf]
+    qs = [reservoir.Qmin, reservoir.Qn, reservoir.Qn, reservoir.Qf]
+    for v, q in zip(vs, qs):
+        ax.vlines(v * 1e-6, 0, q, color='k', ls=':', lw=.5, zorder=0)
+        ax.hlines(q, 0, v * 1e-6, color='k', ls=':', lw=.5, zorder=0)
+                
+    # labels
+    ax.text(0, reservoir.Qmin, r'$Q_c$', ha='left', va='bottom')
+    ax.text(0, reservoir.Qn, r'$Q_n$', ha='left', va='bottom')
+    ax.text(0, reservoir.Qf, r'$Q_f$', ha='left', va='bottom')
+    ax.text(reservoir.Vn * 1e-6, 0, r'$V_n$', rotation=90, ha='right', va='bottom')
+    ax.text(reservoir.Vn_adj * 1e-6, 0, r"$V_n'$", rotation=90, ha='right', va='bottom')
+    ax.text(reservoir.Vf * 1e-6, 0, r'$V_f$', rotation=90, ha='right', va='bottom')
+    
+    # setup
+    ax.set(xlim=(0, reservoir.Vtot * 1e-6),
+           xlabel=r'Storage [$hm^3$]',
+           ylim=(0, None),
+           ylabel=r'Outflow [$m^3/s$]')
+    ax.set_title('LISFLOOD')

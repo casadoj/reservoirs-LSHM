@@ -11,8 +11,8 @@ setup(
             'cal_reservoir=reservoirs_lshm.calibrate:main',
             'fit_starfit=reservoirs_lshm.fit_starfit:main',
             'run_starfit=reservoirs_lshm.run_starfit:main',
-            'catchstats=reservoirs_lshm.catchstats:main',
-            'ncextract=reservoirs_lshm.ncextract:main'
+            'catchstats=reservoirs_lshm.utils.catchstats:main',
+            'ncextract=reservoirs_lshm.utils.ncextract:main'
         ],
     },
     install_requires=[

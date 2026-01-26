@@ -1,0 +1,22 @@
+data:
+    path: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v2.1/
+    reservoirs: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v2.1/selection/test.txt
+    periods: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v2.1/selection/periods.pkl
+    results: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v2.1/test_mpi/
+    
+simulation:
+    model: camaflood
+    inputs:
+        inflow: inflow
+        precipitation: precip_point
+        evaporation: evapo_point
+        demand: 
+    
+calibration:
+    target:
+        - storage
+        - outflow
+    SCEUA:
+        max_iter: 10000
+        complexes: 16
+    spinup:
